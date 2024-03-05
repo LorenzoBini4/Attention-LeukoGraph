@@ -1,3 +1,7 @@
+'''
+This script generates k-nearest neighbors graphs with k = 5 neighbors.
+'''
+
 import pandas as pd
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
