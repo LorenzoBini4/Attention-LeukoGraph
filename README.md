@@ -46,7 +46,7 @@ The main model training, validation, and testing scripts are the following:
 - `DNN`: Deep Neural Network.
 
 ## Supplementary Material
-- `spp`: Proposed model. 
+- `suppl/LeukoGraph_supp.pdf`: Supplementary explanations for coding the hierarchical structure and hierarchical loss in our proposed model. 
 
 ## Citation
 
