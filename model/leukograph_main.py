@@ -225,6 +225,17 @@ def test(loader, model, device):
 
 
 def gnn_evaluation(gnn, max_num_epochs, batch_size, start_lr, num_repetitions, min_lr=0.000001, factor=0.5, patience=5,all_std=True):
+     '''
+    Parameters:
+    - max_num_epochs: Maximum number of training epochs
+    - batch_size: Batch size for training and testing
+    - start_lr: Initial learning rate for the optimizer
+    - num_repetitions: Number of repetitions 
+    - all_std: Boolean flag indicating whether to compute standard deviation of F1 scores across repetitions.
+
+    Returns:
+    - patient_dict: A dictionary containing hierarchical precision (hp), hierarchical recall (hr), hierarchical F-score (hf), and predicted labels for each patient
+    '''
     dataset = MyGraphDataset(num_samples=len(torch.load('graph5_hierarchical_with_labels.pt'))).shuffle()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
