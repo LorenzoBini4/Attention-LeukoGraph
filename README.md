@@ -45,6 +45,9 @@ The main model training, validation, and testing scripts are the following:
 - `GNN`: Graph Neural Network.  
 - `DNN`: Deep Neural Network.
 
+## Supplementary Material
+- `spp`: Proposed model. 
+
 ## Citation
 
 If you find this repository useful, please cite our paper:
