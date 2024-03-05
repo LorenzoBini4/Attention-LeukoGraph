@@ -32,11 +32,11 @@ The flow cytometry dataset contains measurements for 12 cellular markers on bone
 
 The main model training, validation, and testing scripts are the following:
 
-- `data.py` - create the 30 CSV data from the original FCS, stored as *Case_{i}* in the `Data_hierarchical/` directory.
-- `graph_generation.py` - kNN patient-graphs construction from the saved data of `data.py`
-- `weight_generation.py` - weights generation for taking into account the strong class imbalance.
-- `leukograph_main.py` - LeukoGraph model training/validation/testing with inductive learning and weighted BCE-MC loss function.
-- `gnn_main.py` - GNN model training/validation/testing with inductive learning and weighted BCE-MC loss function.
+- `utils/data.py` - create the 30 CSV data from the original FCS, stored as *Case_{i}* in the `Data_hierarchical/` directory.
+- `utils/graph_generation.py` - kNN patient-graphs construction from the saved data of `data.py`
+- `utils/weight_generation.py` - weights generation for taking into account the strong class imbalance.
+- `model/leukograph_main.py` - LeukoGraph model training/validation/testing with inductive learning and weighted BCE-MC loss function.
+- `model/gnn_main.py` - GNN model training/validation/testing with inductive learning and weighted BCE-MC loss function.
 
 ## Models
 
