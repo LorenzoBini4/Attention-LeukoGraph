@@ -85,7 +85,7 @@ R = R.unsqueeze(0).to(device)
 
 
 ### graph with k=5 from kNN, and nodes have been min-max normalized ###
-data_FC = torch.load('graph5_hierarchical_with_labels.pt') 
+data_FC = torch.load('graph_hierarchical_with_labels.pt') 
 #class_weights = np.array([2.43565136e-01, 7.66435558e+00, 1.28012041e+00, 3.28343890e+02,2.52964805e+00, 5.81251452e+00, 2.70730115e+02, 4.78334188e+01])
 class_weights_tensor = torch.tensor(class_weights, dtype=torch.float32).to(device)
 
