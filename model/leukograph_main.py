@@ -85,6 +85,8 @@ R = R.unsqueeze(0).to(device)
 
 ### graph with k=5 from kNN, and nodes have been min-max normalized ###
 data_FC = torch.load('graph_hierarchical_with_labels.pt') 
+class_weights_tensor = torch.tensor(class_weights, dtype=torch.float32).to(device)
+
 
 total_count=[]
 for j in range(30):  
