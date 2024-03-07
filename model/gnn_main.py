@@ -24,11 +24,6 @@ np.random.seed(seed_value)
 # Set seed for PyTorch
 torch.manual_seed(seed_value)
 torch.cuda.manual_seed_all(seed_value)
-
-# Set seed for CUDA operations (if available)
-#torch.backends.cudnn.deterministic = True -----> I'm not sure of these two, since they can affect the performance I think
-#torch.backends.cudnn.benchmark = False
-
 PRINT_MEMORY = False
 device_string = "cuda" if torch.cuda.is_available() else "cpu"
 device = torch.device(device_string)
