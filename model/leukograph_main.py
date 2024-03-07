@@ -236,7 +236,7 @@ def gnn_evaluation(gnn, max_num_epochs, batch_size, start_lr, num_repetitions, m
     Returns:
     - patient_dict: A dictionary containing hierarchical precision (hp), hierarchical recall (hr), hierarchical F-score (hf), and predicted labels for each patient
     '''
-    dataset = MyGraphDataset(num_samples=len(torch.load('graph5_hierarchical_with_labels.pt'))).shuffle()
+    dataset = MyGraphDataset(num_samples=len(torch.load('graph_hierarchical_with_labels.pt'))).shuffle()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     best_model_state_dict = None
