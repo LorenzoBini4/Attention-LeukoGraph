@@ -16,7 +16,7 @@ import os
 from utils.weight_generation import class_weights
 
 # Set seeds for reproducibility
-seed_value = 77  # You can use any integer value
+seed_value = 77
 
 # Set seed for random module
 random.seed(seed_value)
