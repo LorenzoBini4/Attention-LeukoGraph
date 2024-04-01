@@ -1,3 +1,17 @@
+#### Hierarchical Multilabel Classification ###
+'''
+This script generate dataset from FCS files of 30 patients.
+
+The notations correspond to the labels in the following way:
+'O' -> T lymphocytes
+'N' -> B lymphocytes
+'G' -> Monocytes
+'P' -> Mast cells
+'K' -> HSPC 
+'M' -> Myeloid HSPC 
+'L' -> Lymphoid HSPC
+'''
+
 import FlowCal
 import pandas as pd
 import numpy as np
