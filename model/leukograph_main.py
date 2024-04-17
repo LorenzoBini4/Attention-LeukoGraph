@@ -74,11 +74,11 @@ R = np.zeros(AA.shape)
 np.fill_diagonal(R, 1)
 gg = nx.DiGraph(AA) # train.A is the matrix where the direct connections are stored 
 for i in range(len(AA)):
-    ancestors = list(nx.descendants(gg, i)) #here we need to use the function nx.descendants() because in the directed graph the edges have source from the descendant and point towards the ancestor 
+    ancestors = list(nx.descendants(gg, i)) # here we need to use the function nx.descendants() because in the directed graph the edges have source from the descendant and point towards the ancestor 
     if ancestors:
         R[i, ancestors] = 1
 R = torch.tensor(R)
-#Transpose to get the descendants for each node 
+# Transpose to get the descendants for each node 
 R = R.transpose(1, 0)
 R = R.unsqueeze(0).to(device)
 
