@@ -119,7 +119,7 @@ class MyGraphDataset(Dataset):
 class GATLayer(nn.Module):
     def __init__(self, input_dim, output_dim, num_heads,concat_param,dropout_param):
         super(GATLayer, self).__init__()
-        self.conv = GATConv(input_dim, output_dim , heads=num_heads,concat=concat_param, dropout=dropout_param)  # Adjusted output_dim
+        self.conv = GATConv(input_dim, output_dim , heads=num_heads,concat=concat_param, dropout=dropout_param)
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -156,10 +156,10 @@ class LeukoGraph(nn.Module):
                 
         self.gat_layers = nn.ModuleList(gat_layers)
 
-        self.drop = nn.Dropout(0.3)
+        self.drop = nn.Dropout(0.2)
         self.sigmoid = nn.Sigmoid()
         self.f = nn.ReLU()
-        self.reset_parameters()  # Initialize the weights
+        self.reset_parameters()  
 
     def reset_parameters(self):
         for gat_layer in self.gat_layers:
@@ -178,11 +178,11 @@ class LeukoGraph(nn.Module):
         if self.training:
             constrained_out = x
         else:
-            constrained_out = get_constr_out(x, self.R )  # Assuming get_constr_out is already defined
+            constrained_out = get_constr_out(x, self.R )
         return constrained_out
 
     
-# One training epoch for the LeukoGraph model.
+# One training epoch for the LeukoGraph model
 def train(train_loader, model, optimizer, device,criterion):
     model.train()
     
@@ -210,7 +210,7 @@ def train(train_loader, model, optimizer, device,criterion):
         optimizer.step()
 
 
-# Get acc. of LeukoGraph model.
+# Get acc. of LeukoGraph model
 def test(loader, model, device):
     model.eval()
 
@@ -242,7 +242,7 @@ def gnn_evaluation(gnn, max_num_epochs, batch_size, start_lr, num_repetitions, m
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     best_model_state_dict = None
-    # Add these lines before the cross-validation loop
+    # Added before the cross-validation loop
     best_test_indices = None
     best_f1_score = 0.0
     patient_dict=dict()
@@ -298,12 +298,11 @@ def gnn_evaluation(gnn, max_num_epochs, batch_size, start_lr, num_repetitions, m
                 model.eval()
                 data = data.to(device)
                 constrained_output = model(data)
-                #predss = constrained_output.data > 0.5
+                #predss = constrained_output.data > 0.5 if you're dataset is more suitable for a threshold
                 predss = constrained_output.data
        
                 cell_preds=[]
                 for row in predss:
-                    #row_n=torch.cat((row[:5], row[6:]), axis = 0)
                     ind_max=row[:5].argmax().item()+1
                     if ind_max==5:
                         ind_n=row[6:].argmax().item()+1
@@ -399,7 +398,6 @@ F_scores_mean = F_scores.mean(axis = 0)
 idx = F_scores_mean.argmax(axis=0)
 
 for key in patient_dict.keys():
-    #idx=patient_dict[key]['F-score'].index(max(patient_dict[key]['F-score']))
     df=pd.read_csv(f"Data_hierarchical/Case_{key}.csv", low_memory=False)  # Set low_memory=False to fix the warning
     df['predicted label']=patient_dict[key]['pred'][idx]
     if not os.path.exists("Data_hierarchical_predicted"):
@@ -419,7 +417,6 @@ for key in patient_dict.keys():
     print(f"Recall: {recall:.4f}")
     print(f"F1 Score: {f1:.4f}")
     
-     # Calculate ratio  of correct predictions for each label
     total_right_cells = np.sum(np.diag(conf_matrix))
     ratio_per_label = np.diag(conf_matrix) / np.sum(conf_matrix, axis=1)
 
@@ -442,7 +439,6 @@ for key in patient_dict.keys():
         average_ratio_per_label[6].append(patient_dict[key]['K_label'][idx])
     print("-" * 50)
 
-# Calculate the average ratio for each label across all patients
 average_ratio_per_label = np.mean(average_ratio_per_label, axis=1)
 
 # Print the average ratios 
