@@ -74,7 +74,7 @@ R = np.zeros(AA.shape)
 np.fill_diagonal(R, 1)
 gg = nx.DiGraph(AA) # train.A is the matrix where the direct connections are stored 
 for i in range(len(AA)):
-    ancestors = list(nx.descendants(gg, i)) # here we need to use the function nx.descendants() because in the directed graph the edges have source from the descendant and point towards the ancestor 
+    ancestors = list(nx.descendants(gg, i)) # Here we need to use the function nx.descendants() because in the directed graph the edges have source from the descendant and point towards the ancestor 
     if ancestors:
         R[i, ancestors] = 1
 R = torch.tensor(R)
@@ -83,7 +83,7 @@ R = R.transpose(1, 0)
 R = R.unsqueeze(0).to(device)
 
 
-### graph with k=5 from kNN, and nodes have been min-max normalized ###
+### Graph with k=5 from kNN, and nodes have been min-max normalized ###
 data_FC = torch.load('graph_hierarchical_with_labels.pt') 
 class_weights_tensor = torch.tensor(class_weights, dtype=torch.float32).to(device)
 
