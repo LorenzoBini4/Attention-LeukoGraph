@@ -8,27 +8,27 @@ p=dict()
 for i in range(1,7):
     p[i-1]=dict()
     for ch in ['A','G','K','L','M','N','O','P']:
-        p[i-1][ch]=FlowCal.io.FCSData(f'/home/folder1/Case{i}_'+ch+'.fcs')
+        p[i-1][ch]=FlowCal.io.FCSData(f'/home/users/b/bini/gnn/a_cells_sup/multiclass_hier/folder1/Case{i}_'+ch+'.fcs')
 
 
 for i in range(7,30):
     p[i-1]=dict()
     for ch in ['A','G','K','L','M','N','O','P']:
-        p[i-1][ch]=FlowCal.io.FCSData(f'/home/folder2/Case{i}_'+ch+'.fcs')
+        p[i-1][ch]=FlowCal.io.FCSData(f'/home/users/b/bini/gnn/a_cells_sup/multiclass_hier/folder2/Case{i}_'+ch+'.fcs')
 
 p[29]=dict()
-p[29]['A'] = np.genfromtxt('/home/folder2/Case31_A.csv', delimiter=";")[1:]
-p[29]['G'] = np.genfromtxt('/home/folder2/Case31_G.csv', delimiter=";")[1:]
-p[29]['K'] = np.genfromtxt('/home/folder2/Case31_K.csv', delimiter=";")[1:]
-p[29]['L'] = np.genfromtxt('/home/folder2/Case31_L.csv', delimiter=";")[1:]
-p[29]['M'] = np.genfromtxt('/home/folder2/Case31_M.csv', delimiter=";")[1:]
-p[29]['N'] = np.genfromtxt('/home/folder2/Case31_N.csv', delimiter=";")[1:]
-p[29]['O'] = np.genfromtxt('/home/folder2/Case31_O.csv', delimiter=";")[1:]
-p[29]['P'] = np.genfromtxt('/home/folder2/Case31_P.csv', delimiter=";")[1:]
+p[29]['A'] = np.genfromtxt('/home/users/b/bini/gnn/a_cells_sup/multiclass_hier/folder2/Case31_A.csv', delimiter=";")[1:]
+p[29]['G'] = np.genfromtxt('/home/users/b/bini/gnn/a_cells_sup/multiclass_hier/folder2/Case31_G.csv', delimiter=";")[1:]
+p[29]['K'] = np.genfromtxt('/home/users/b/bini/gnn/a_cells_sup/multiclass_hier/folder2/Case31_K.csv', delimiter=";")[1:]
+p[29]['L'] = np.genfromtxt('/home/users/b/bini/gnn/a_cells_sup/multiclass_hier/folder2/Case31_L.csv', delimiter=";")[1:]
+p[29]['M'] = np.genfromtxt('/home/users/b/bini/gnn/a_cells_sup/multiclass_hier/folder2/Case31_M.csv', delimiter=";")[1:]
+p[29]['N'] = np.genfromtxt('/home/users/b/bini/gnn/a_cells_sup/multiclass_hier/folder2/Case31_N.csv', delimiter=";")[1:]
+p[29]['O'] = np.genfromtxt('/home/users/b/bini/gnn/a_cells_sup/multiclass_hier/folder2/Case31_O.csv', delimiter=";")[1:]
+p[29]['P'] = np.genfromtxt('/home/users/b/bini/gnn/a_cells_sup/multiclass_hier/folder2/Case31_P.csv', delimiter=";")[1:]
 
 # Dataset generation Hierarchical approach
 column=('FS INT', 'SS PEAK', 'SS INT', 'SS TOF', 'FL1 INT_CD14-FITC', 'FL2 INT_CD19-PE', 'FL3 INT_CD13-ECD', 'FL4 INT_CD33-PC5.5', 'FL5 INT_CD34-PC7', 'FL6 INT_CD117-APC', 'FL7 INT_CD7-APC700', 'FL8 INT_CD16-APC750', 'FL9 INT_HLA-PB', 'FL10 INT_CD45-KO', 'TIME')
-for i in range(30):
+for i in range(29):
     
     df_A=pd.DataFrame(p[i]['A'],columns=column)
     df_G=pd.DataFrame(p[i]['G'],columns=column)
@@ -58,5 +58,4 @@ for i in range(30):
         os.makedirs(directory)
 
     df = pd.concat([df_O,df_N,df_G,df_P,df_M,df_L,df_H])
-
     df.to_csv(f"{directory}/Case_{i+1}.csv", index=False)
