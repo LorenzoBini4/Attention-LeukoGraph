@@ -1,4 +1,3 @@
-
 '''
 This script generates k-nearest neighbors graphs with k = 5 neighbors.
 '''
