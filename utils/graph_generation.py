@@ -48,7 +48,7 @@ R = R.transpose(1, 0)
 R = R.unsqueeze(0)
 
 data_FC=[]
-for j in range(29):
+for j in range(30):
     # Data before min max normalization
     df = pd.read_csv(f"Data_hierarchical/Case_{j+1}.csv",dtype={"label": str})
     actual_labels = df[["label"]]
