@@ -28,14 +28,14 @@ for i in range(7, 30):
         p[i-1][ch] = FlowCal.io.FCSData(f'/home/folder2/Case{i}_' + ch + '.fcs')
 
 p[29] = dict()
-p[29]['A'] = np.genfromtxt('/home/folder2/Case31_A.csv', delimiter=";")[1:]
-p[29]['G'] = np.genfromtxt('/home/folder2/Case31_G.csv', delimiter=";")[1:]
-p[29]['K'] = np.genfromtxt('/home/folder2/Case31_K.csv', delimiter=";")[1:]
-p[29]['L'] = np.genfromtxt('/home/folder2/Case31_L.csv', delimiter=";")[1:]
-p[29]['M'] = np.genfromtxt('/home/folder2/Case31_M.csv', delimiter=";")[1:]
-p[29]['N'] = np.genfromtxt('/home/folder2/Case31_N.csv', delimiter=";")[1:]
-p[29]['O'] = np.genfromtxt('/home/folder2/Case31_O.csv', delimiter=";")[1:]
-p[29]['P'] = np.genfromtxt('/home/folder2/Case31_P.csv', delimiter=";")[1:]
+p[29]['A'] = np.genfromtxt('/home/folder2/Case30_A.csv', delimiter=";")[1:]
+p[29]['G'] = np.genfromtxt('/home/folder2/Case30_G.csv', delimiter=";")[1:]
+p[29]['K'] = np.genfromtxt('/home/folder2/Case30_K.csv', delimiter=";")[1:]
+p[29]['L'] = np.genfromtxt('/home/folder2/Case30_L.csv', delimiter=";")[1:]
+p[29]['M'] = np.genfromtxt('/home/folder2/Case30_M.csv', delimiter=";")[1:]
+p[29]['N'] = np.genfromtxt('/home/folder2/Case30_N.csv', delimiter=";")[1:]
+p[29]['O'] = np.genfromtxt('/home/folder2/Case30_O.csv', delimiter=";")[1:]
+p[29]['P'] = np.genfromtxt('/home/folder2/Case30_P.csv', delimiter=";")[1:]
 
 # Dataset generation Hierarchical approach with columns O,N,G,P,K,M,L,H
 total_weights=np.zeros((30,8))
