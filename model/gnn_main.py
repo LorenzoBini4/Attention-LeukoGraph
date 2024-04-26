@@ -1,4 +1,7 @@
+import torch
+import numpy as np
 import torch.nn as nn
+import pandas as pd
 from torch_geometric.data import Dataset
 from torch_geometric.nn import MessagePassing
 from torch_geometric.utils import add_self_loops, degree
@@ -14,39 +17,13 @@ from utils.weight_generation import class_weights
 
 # Set seeds for reproducibility
 seed_value = 77
-
-# Set seed for random module
 random.seed(seed_value)
-
-# Set seed for NumPy
 np.random.seed(seed_value)
-
-# Set seed for PyTorch
 torch.manual_seed(seed_value)
 torch.cuda.manual_seed_all(seed_value)
 PRINT_MEMORY = False
 device_string = "cuda" if torch.cuda.is_available() else "cpu"
 device = torch.device(device_string)
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
-os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:21"
-
-# Check if a GPU is available
-if torch.cuda.is_available():
-    # Get the current GPU device
-    device = torch.cuda.current_device()
-    
-    # Get the GPU's memory usage in bytes
-    memory_allocated = torch.cuda.memory_allocated(device)
-    memory_cached = torch.cuda.memory_cached(device)
-    
-    # Convert bytes to a more human-readable format (e.g., megabytes or gigabytes)
-    memory_allocated_mb = memory_allocated / 1024**2  # Megabytes
-    memory_cached_mb = memory_cached / 1024**2  # Megabytes
-    
-    print(f"GPU Memory Allocated: {memory_allocated_mb:.2f} MB")
-    print(f"GPU Memory Cached: {memory_cached_mb:.2f} MB")
-else:
-    print("No GPU available.")
 
 to_skip = ['root']
 ATTRIBUTE_class = "1,2,3,4,5,5_1,5_2,5_3"
@@ -63,14 +40,12 @@ nodes_idx = dict(zip(nodes, range(len(nodes))))
 g_t = g.reverse()
 
 evall = [t not in to_skip for t in nodes]
-print(nodes)
-
 AA = np.array(nx.to_numpy_array(g, nodelist=nodes))
 R = np.zeros(AA.shape)
 np.fill_diagonal(R, 1)
 gg = nx.DiGraph(AA) # train.A is the matrix where the direct connections are stored 
 for i in range(len(AA)):
-    ancestors = list(nx.descendants(gg, i)) #here we need to use the function nx.descendants() because in the directed graph the edges have source from the descendant and point towards the ancestor 
+    ancestors = list(nx.descendants(gg, i)) # Here we need to use the function nx.descendants() because in the directed graph the edges have source from the descendant and point towards the ancestor 
     if ancestors:
         R[i, ancestors] = 1
 R = torch.tensor(R)
@@ -78,17 +53,14 @@ R = torch.tensor(R)
 R = R.transpose(1, 0)
 R = R.unsqueeze(0).to(device)
 
-
 ### graph with k=5 from kNN, and nodes have been min-max normalized ###
-data_FC = torch.load('graph_hierarchical_with_labels.pt') 
+INPUT_GRAPH = 'gHC_k7'
+data_FC = torch.load(INPUT_GRAPH) 
 class_weights_tensor = torch.tensor(class_weights, dtype=torch.float32).to(device)
-
 total_count=[]
 for j in range(30):  
     df = pd.read_csv(f"Data_hierarchical/Case_{j+1}.csv", low_memory=False)
-    
     total_count.append(len(df))
-
 
 def get_constr_out(x, R):
     """ Given the output of the graph neural network x returns the output of MCM given the hierarchy constraint expressed in the matrix R """
@@ -103,7 +75,7 @@ class MyGraphDataset(Dataset):
     def __init__(self,  num_samples,transform=None, pre_transform=None):
         super(MyGraphDataset, self).__init__(transform, pre_transform)
         self.num_samples = num_samples
-        self.data_list = torch.load('graph5_hierarchical_with_labels.pt')   
+        self.data_list = torch.load(INPUT_GRAPH)   
 
     def len(self):
         return self.num_samples
@@ -113,7 +85,7 @@ class MyGraphDataset(Dataset):
     
 class GNNLayer(MessagePassing):
     def __init__(self, input_dim, output_dim):
-        super(GNNLayer, self).__init__(aggr='add')  # "Add" aggregation strategy
+        super(GNNLayer, self).__init__(aggr='add')  
         self.fc = nn.Linear(input_dim, output_dim)
         self.reset_parameters()  # Initialize the weights
 
@@ -178,56 +150,39 @@ class ConstrainedGNNModel(nn.Module):
         if self.training:
             constrained_out = x
         else:
-            constrained_out = get_constr_out(x, self.R )  # Assuming get_constr_out is defined elsewhere
+            constrained_out = get_constr_out(x, self.R )
 
         return constrained_out
-
     
 # One training epoch for the GNN model.
 def train(train_loader, model, optimizer, device,criterion):
     model.train()
-    
     for data in train_loader:
         data = data.to(device)
         optimizer.zero_grad()
         output = model(data)
-
         #MCLoss
         constr_output = get_constr_out(output, R)
         train_output = data.y *output.double()
         train_output = get_constr_out(train_output, R)
         train_output = (1-data.y)*constr_output.double() + data.y*train_output
-        
         loss = criterion(train_output[:,data.to_eval[0]], data.y[:,data.to_eval[0]]) 
-
-        predicted = constr_output.data > 0.4
- 
-        # Total number of labels
-        total_train = data.y.size(0) * data.y.size(1)
-        # Total correct predictions
-        correct_train = (predicted == data.y.byte()).sum()
-
         loss.backward()
         optimizer.step()
-
 
 # Get acc. of GNN model.
 def test(loader, model, device):
     model.eval()
-
     correct = 0
     for data in loader:
         data = data.to(device)
         constrained_output = model(data)
         predss = constrained_output.data > 0.4    
         correct += (predss == data.y.byte()).sum() / (predss.shape[0]*predss.shape[1])
-    
     return correct / len(loader.dataset)
 
-
-
 def gnn_evaluation(gnn, max_num_epochs, batch_size, start_lr, num_repetitions, min_lr=0.000001, factor=0.5, patience=5,all_std=True):
-     '''
+    '''
     Parameters:
     - max_num_epochs: Maximum number of training epochs
     - batch_size: Batch size for training and testing
@@ -238,23 +193,12 @@ def gnn_evaluation(gnn, max_num_epochs, batch_size, start_lr, num_repetitions, m
     Returns:
     - patient_dict: A dictionary containing hierarchical precision (hp), hierarchical recall (hr), hierarchical F-score (hf), and predicted labels for each patient
     '''
-    dataset = MyGraphDataset(num_samples=len(torch.load('graph_hierarchical_with_labels.pt'))).shuffle()
+    dataset = MyGraphDataset(num_samples=len(torch.load(INPUT_GRAPH))).shuffle()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-    best_model_state_dict = None
-    # Add these lines before the cross-validation loop
-    best_test_indices = None
-    best_f1_score = 0.0
     patient_dict=dict()
     for i in range(num_repetitions):
         kf = KFold(n_splits=7, shuffle=True)
         dataset.shuffle()
-
-        f1_scores = []
-        acc_scores = []
-        all_preds = []
-        all_labels = []
-
         for train_index, test_index in kf.split(list(range(len(dataset)))):
             train_index, val_index = train_test_split(train_index, test_size=0.1)
 
@@ -270,16 +214,11 @@ def gnn_evaluation(gnn, max_num_epochs, batch_size, start_lr, num_repetitions, m
 
             model = gnn(R).to(device)
             model.reset_parameters()
-
             optimizer = torch.optim.Adam(model.parameters(), lr=start_lr)
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=factor,
                                                                    patience=patience, min_lr=0.0000001)
             criterion = nn.BCELoss(weight=class_weights_tensor)
-
             best_val_acc = 0.0
-            best_test_acc = 0.0
-            best_fold_f1_score = 0.0
-
             for epoch in range(1, max_num_epochs + 1):
                 lr = scheduler.optimizer.param_groups[0]['lr']
                 train(train_loader, model, optimizer, device,criterion)
@@ -292,26 +231,19 @@ def gnn_evaluation(gnn, max_num_epochs, batch_size, start_lr, num_repetitions, m
 
             # Evaluation on the entire test set
             model.eval()
-            preds = []
-            labels = []
             for data in test_loader:
                 model.eval()
                 data = data.to(device)
                 constrained_output = model(data)
-                #predss = constrained_output.data > 0.5
                 predss = constrained_output.data
-       
                 cell_preds=[]
                 for row in predss:
-                    #row_n=torch.cat((row[:5], row[6:]), axis = 0)
                     ind_max=row[:5].argmax().item()+1
                     if ind_max==5:
                         ind_n=row[6:].argmax().item()+1
                         cell_preds.append(str('5_')+str(ind_n))
                     else:
                         cell_preds.append(str(ind_max))
-                    
-
                 predsss = cell_preds
                 labelss=data.yy[0]
                 idx=total_count.index(len(labelss))+1
@@ -326,7 +258,6 @@ def gnn_evaluation(gnn, max_num_epochs, batch_size, start_lr, num_repetitions, m
                 total_K_label = 0
                 true_K_label = 0
                 for ii in range(len(predsss)):
-                    
                     if labelss[ii] != '5_3':
                         if predsss[ii]=='5_1' or predsss[ii]=='5_2' or predsss[ii] == '5_3':
                             alpha[ii]=['root','5',predsss[ii]]
@@ -346,19 +277,12 @@ def gnn_evaluation(gnn, max_num_epochs, batch_size, start_lr, num_repetitions, m
                             beta[ii]=['root','5']
                         else:
                             continue
-                         
-                        
-                        
-
                     intersect += len(list(set(alpha[ii]) & set(beta[ii])))
                     tot_alpha  += len(alpha[ii])
                     tot_beta  += len(beta[ii])
-                
                 hP =  intersect /  tot_alpha
                 hR =  intersect /  tot_beta
                 hF = 2* hP * hR / (hP + hR)
-                #precision, recall, f1, _ = precision_recall_fscore_support(labelss, predsss, average='weighted', zero_division=1) 
-                
                 if idx not in patient_dict.keys():
                     patient_dict[idx]=dict()
                     patient_dict[idx]['precision']=[hP]
@@ -374,10 +298,6 @@ def gnn_evaluation(gnn, max_num_epochs, batch_size, start_lr, num_repetitions, m
                     patient_dict[idx]['pred'].append(predsss)
                     patient_dict[idx]['label'].append(labelss)
                     patient_dict[idx]['K_label'].append(true_K_label / total_K_label)
-
-        
-            
-    
     return patient_dict
 
 max_num_epochs=20
@@ -385,30 +305,20 @@ batch_size=1
 start_lr=0.1
 num_repetitions=5
 patient_dict=gnn_evaluation(ConstrainedGNNModel, max_num_epochs, batch_size, start_lr, num_repetitions, all_std=True)
-# Initialize a list to store the ratios for each label across all patients
-average_ratio_per_label = []
 
+average_ratio_per_label = []
 F_scores = np.zeros((30,num_repetitions))
 no = 0
 for key in patient_dict.keys():
     F_scores[no,:] = patient_dict[key]['F-score']
     no += 1
-
 F_scores_mean = F_scores.mean(axis = 0)
 idx = F_scores_mean.argmax(axis=0)
-
-
 for key in patient_dict.keys():
-    #print('kkk',patient_dict[key]['F-score'])
-    #idx=patient_dict[key]['F-score'].index(max(patient_dict[key]['F-score']))
     df=pd.read_csv(f"Data_hierarchical/Case_{key}.csv", low_memory=False)  # Set low_memory=False to fix the warning
     df['predicted label']=patient_dict[key]['pred'][idx]
-    if not os.path.exists("Data_hierarchical_predicted"):
-        os.makedirs("Data_hierarchical_predicted")
-
-    df.to_csv(f"Data_hierarchical_predicted/Case_{key}.csv", index=False)
     
-     # Compute metrics for each patient
+    # Compute metrics for each patient
     conf_matrix = confusion_matrix(patient_dict[key]['label'][idx], patient_dict[key]['pred'][idx])[:-1,:-1]
     precision = patient_dict[key]['precision'][idx]
     recall = patient_dict[key]['recall'][idx]
@@ -427,8 +337,6 @@ for key in patient_dict.keys():
     for i, label in enumerate(range(conf_matrix.shape[0])):
         print(f"Label {label}:")
         print(f"Ratio of Correct Predictions: {ratio_per_label[i]:.4f}")
-
-        # Add the ratio to the list for computing the average later
         if len(average_ratio_per_label) <= i:
             average_ratio_per_label.append([ratio_per_label[i]])
         else:
@@ -441,12 +349,9 @@ for key in patient_dict.keys():
         average_ratio_per_label[6].append(patient_dict[key]['K_label'][idx])
     print("-" * 50)
 
-# Calculate the average ratio for each label across all patients
 average_ratio_per_label = np.mean(average_ratio_per_label, axis=1)
-
 # Print the average ratios 
 print("\nAverage Ratios Across All Patients:")
 label_dict = {0: 'O', 1: 'N', 2: 'G', 3: 'P', 4: 'M', 5: 'L', 6: 'K'}
 for i, average_ratio in enumerate(average_ratio_per_label):
     print(f"Label {label_dict[i]}: {average_ratio:.4f}")
-                
