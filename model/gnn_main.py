@@ -154,32 +154,41 @@ class ConstrainedGNNModel(nn.Module):
 
         return constrained_out
     
-# One training epoch for the GNN model.
-def train(train_loader, model, optimizer, device,criterion):
-    model.train()
-    for data in train_loader:
-        data = data.to(device)
-        optimizer.zero_grad()
-        output = model(data)
-        #MCLoss
-        constr_output = get_constr_out(output, R)
-        train_output = data.y *output.double()
-        train_output = get_constr_out(train_output, R)
-        train_output = (1-data.y)*constr_output.double() + data.y*train_output
-        loss = criterion(train_output[:,data.to_eval[0]], data.y[:,data.to_eval[0]]) 
-        loss.backward()
-        optimizer.step()
+class ClearCache:
+    def __enter__(self):
+        torch.cuda.empty_cache()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        torch.cuda.empty_cache()
+
+with ClearCache():
+    # One training epoch for the LeukoGraph model
+    def train(train_loader, model, optimizer, device,criterion):
+        model.train()
+        for data in train_loader:
+            data = data.to(device)
+            optimizer.zero_grad()
+            output = model(data)
+            #MCLoss
+            constr_output = get_constr_out(output, R)
+            train_output = data.y *output.double()
+            train_output = get_constr_out(train_output, R)
+            train_output = (1-data.y)*constr_output.double() + data.y*train_output
+            loss = criterion(train_output[:,data.to_eval[0]], data.y[:,data.to_eval[0]]) 
+            loss.backward()
+            optimizer.step()
 
 # Get acc. of GNN model.
 def test(loader, model, device):
-    model.eval()
-    correct = 0
-    for data in loader:
-        data = data.to(device)
-        constrained_output = model(data)
-        predss = constrained_output.data > 0.4    
-        correct += (predss == data.y.byte()).sum() / (predss.shape[0]*predss.shape[1])
-    return correct / len(loader.dataset)
+    with torch.no_grad():
+        model.eval()
+        correct = 0
+        for data in loader:
+            data = data.to(device)
+            constrained_output = model(data)
+            predss = constrained_output.data > 0.4    
+            correct += (predss == data.y.byte()).sum() / (predss.shape[0]*predss.shape[1])
+        return correct / len(loader.dataset)
 
 def gnn_evaluation(gnn, max_num_epochs, batch_size, start_lr, num_repetitions, min_lr=0.000001, factor=0.5, patience=5,all_std=True):
     '''
@@ -221,6 +230,7 @@ def gnn_evaluation(gnn, max_num_epochs, batch_size, start_lr, num_repetitions, m
             best_val_acc = 0.0
             for epoch in range(1, max_num_epochs + 1):
                 lr = scheduler.optimizer.param_groups[0]['lr']
+                torch.cuda.empty_cache()
                 train(train_loader, model, optimizer, device,criterion)
                 val_acc = test(val_loader, model, device)
                 scheduler.step(val_acc)
@@ -230,56 +240,58 @@ def gnn_evaluation(gnn, max_num_epochs, batch_size, start_lr, num_repetitions, m
                     best_test_acc = test(test_loader, model, device) * 100.0
 
             # Evaluation on the entire test set
-            model.eval()
-            for data in test_loader:
+            torch.cuda.empty_cache()
+            with torch.no_grad():
                 model.eval()
-                data = data.to(device)
-                constrained_output = model(data)
-                predss = constrained_output.data
-                cell_preds=[]
-                for row in predss:
-                    ind_max=row[:5].argmax().item()+1
-                    if ind_max==5:
-                        ind_n=row[6:].argmax().item()+1
-                        cell_preds.append(str('5_')+str(ind_n))
-                    else:
-                        cell_preds.append(str(ind_max))
-                predsss = cell_preds
-                labelss=data.yy[0]
-                idx=total_count.index(len(labelss))+1
-                # Compute confusion matrix, precision, recall, and F1 score
-                alpha= [0] * len(predsss)
-                beta= [0] * len(predsss)
-
-                intersect = 0
-                tot_alpha = 0
-                tot_beta = 0
-
-                total_K_label = 0
-                true_K_label = 0
-                for ii in range(len(predsss)):
-                    if labelss[ii] != '5_3':
-                        if predsss[ii]=='5_1' or predsss[ii]=='5_2' or predsss[ii] == '5_3':
-                            alpha[ii]=['root','5',predsss[ii]]
-                        else:
-                            alpha[ii]=['root',predsss[ii]]
-
-                        if labelss[ii]=='5_1' or labelss[ii]=='5_2':
-                            beta[ii]=['root','5',labelss[ii]]
-                        else:
-                            beta[ii]=['root',labelss[ii]]
-                    elif (labelss[ii] == '5_1' or labelss[ii] == '5_2' or labelss[ii] == '5_3'):
-                        total_K_label +=1
-                        ind_max=predss[ii][:5].argmax().item()+1
+                for data in test_loader:
+                    model.eval()
+                    data = data.to(device)
+                    constrained_output = model(data)
+                    predss = constrained_output.data
+                    cell_preds=[]
+                    for row in predss:
+                        ind_max=row[:5].argmax().item()+1
                         if ind_max==5:
-                            true_K_label +=1 
-                            alpha[ii]=['root','5']
-                            beta[ii]=['root','5']
+                            ind_n=row[6:].argmax().item()+1
+                            cell_preds.append(str('5_')+str(ind_n))
                         else:
-                            continue
-                    intersect += len(list(set(alpha[ii]) & set(beta[ii])))
-                    tot_alpha  += len(alpha[ii])
-                    tot_beta  += len(beta[ii])
+                            cell_preds.append(str(ind_max))
+                    predsss = cell_preds
+                    labelss=data.yy[0]
+                    idx=total_count.index(len(labelss))+1
+                    # Compute confusion matrix, precision, recall, and F1 score
+                    alpha= [0] * len(predsss)
+                    beta= [0] * len(predsss)
+    
+                    intersect = 0
+                    tot_alpha = 0
+                    tot_beta = 0
+    
+                    total_K_label = 0
+                    true_K_label = 0
+                    for ii in range(len(predsss)):
+                        if labelss[ii] != '5_3':
+                            if predsss[ii]=='5_1' or predsss[ii]=='5_2' or predsss[ii] == '5_3':
+                                alpha[ii]=['root','5',predsss[ii]]
+                            else:
+                                alpha[ii]=['root',predsss[ii]]
+    
+                            if labelss[ii]=='5_1' or labelss[ii]=='5_2':
+                                beta[ii]=['root','5',labelss[ii]]
+                            else:
+                                beta[ii]=['root',labelss[ii]]
+                        elif (labelss[ii] == '5_1' or labelss[ii] == '5_2' or labelss[ii] == '5_3'):
+                            total_K_label +=1
+                            ind_max=predss[ii][:5].argmax().item()+1
+                            if ind_max==5:
+                                true_K_label +=1 
+                                alpha[ii]=['root','5']
+                                beta[ii]=['root','5']
+                            else:
+                                continue
+                        intersect += len(list(set(alpha[ii]) & set(beta[ii])))
+                        tot_alpha  += len(alpha[ii])
+                        tot_beta  += len(beta[ii])
                 hP =  intersect /  tot_alpha
                 hR =  intersect /  tot_beta
                 hF = 2* hP * hR / (hP + hR)
