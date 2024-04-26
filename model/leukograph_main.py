@@ -11,7 +11,7 @@ import random
 import networkx as nx
 import os
 from torch_geometric.nn import GATConv
-from utils.weight_generation import class_weights
+from tqdm import tqdm
 
 # Set seeds for reproducibility
 seed_value = 77
@@ -38,7 +38,6 @@ nodes_idx = dict(zip(nodes, range(len(nodes))))
 g_t = g.reverse()
 
 evall = [t not in to_skip for t in nodes]
-print(nodes)
 
 AA = np.array(nx.to_numpy_array(g, nodelist=nodes))
 R = np.zeros(AA.shape)
@@ -55,11 +54,11 @@ R = R.unsqueeze(0).to(device)
 
 INPUT_GRAPH = 'gHC_k7.pt'
 data_FC = torch.load(INPUT_GRAPH) 
-class_weights_tensor = torch.tensor(class_weights, dtype=torch.float32).to(device)
 total_count=[]
 for j in range(30):  
     df = pd.read_csv(f"Data_hierarchical/Case_{j+1}.csv", low_memory=False)
     total_count.append(len(df))
+
 
 def get_constr_out(x, R):
     """ Given the output of the graph neural network x returns the output of MCM given the hierarchy constraint expressed in the matrix R """
@@ -151,7 +150,6 @@ with ClearCache():
     # One training epoch for the LeukoGraph model
     def train(train_loader, model, optimizer, device,criterion):
         model.train()
-        
         for data in train_loader:
             data = data.to(device)
             optimizer.zero_grad()
@@ -177,7 +175,7 @@ def test(loader, model, device):
             correct += (predss == data.y.byte()).sum() / (predss.shape[0]*predss.shape[1])
         return correct / len(loader.dataset)
 
-def gnn_evaluation(gnn, max_num_epochs, batch_size, start_lr, num_repetitions, min_lr=0.000001, factor=0.5, patience=5,all_std=True):
+def gnn_evaluation(gnn, max_num_epochs, batch_size, start_lr, num_repetitions, min_lr=0.000001, factor=0.5, patience=5, all_std=True):
     '''
     Parameters:
     - max_num_epochs: Maximum number of training epochs
@@ -195,7 +193,7 @@ def gnn_evaluation(gnn, max_num_epochs, batch_size, start_lr, num_repetitions, m
     for i in range(num_repetitions):
         kf = KFold(n_splits=7, shuffle=True)
         dataset.shuffle()
-        for train_index, test_index in kf.split(list(range(len(dataset)))):
+        for train_index, test_index in tqdm(kf.split(list(range(len(dataset)))), desc=f"Repetition {i+1}/{num_repetitions}"):
             train_index, val_index = train_test_split(train_index, test_size=0.1)
 
             train_dataset = dataset[train_index.tolist()]
@@ -213,8 +211,8 @@ def gnn_evaluation(gnn, max_num_epochs, batch_size, start_lr, num_repetitions, m
             optimizer = torch.optim.Adam(model.parameters(), lr=start_lr)
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=factor,
                                                                    patience=patience, min_lr=0.0000001)
-            criterion = nn.BCELoss(weight=class_weights_tensor)
-            #criterion = nn.BCELoss()
+            #criterion = nn.BCELoss(weight=class_weights_tensor)
+            criterion = nn.BCELoss()
             best_val_acc = 0.0
             for epoch in range(1, max_num_epochs + 1):
                 lr = scheduler.optimizer.param_groups[0]['lr']
@@ -229,7 +227,7 @@ def gnn_evaluation(gnn, max_num_epochs, batch_size, start_lr, num_repetitions, m
 
             # Evaluation on the entire test set
             torch.cuda.empty_cache()
-            for data in test_loader:
+            for data in tqdm(test_loader, desc="Testing"):
                 with torch.no_grad():
                     model.eval()
                     data = data.to(device)
@@ -304,7 +302,7 @@ def gnn_evaluation(gnn, max_num_epochs, batch_size, start_lr, num_repetitions, m
 
 max_num_epochs=40
 batch_size=1
-start_lr=0.01
+start_lr=0.007
 num_repetitions=5
 patient_dict=gnn_evaluation(LeukoGraph, max_num_epochs, batch_size, start_lr, num_repetitions, all_std=True)
 
@@ -356,6 +354,7 @@ for key in patient_dict.keys():
     print("-" * 50)
 
 average_ratio_per_label = np.mean(average_ratio_per_label, axis=1)
+
 # Print the average ratios 
 print("\nAverage Ratios Across All Patients:")
 label_dict = {0: 'O', 1: 'N', 2: 'G', 3: 'P', 4: 'M', 5: 'L', 6: 'K'}
