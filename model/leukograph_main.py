@@ -60,7 +60,6 @@ for j in range(30):
     df = pd.read_csv(f"Data_hierarchical/Case_{j+1}.csv", low_memory=False)
     total_count.append(len(df))
 
-
 def get_constr_out(x, R):
     """ Given the output of the graph neural network x returns the output of MCM given the hierarchy constraint expressed in the matrix R """
     c_out = x.double()
