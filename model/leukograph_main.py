@@ -355,7 +355,6 @@ for key in patient_dict.keys():
     print("-" * 50)
 
 average_ratio_per_label = np.mean(average_ratio_per_label, axis=1)
-
 # Print the average ratios 
 print("\nAverage Ratios Across All Patients:")
 label_dict = {0: 'O', 1: 'N', 2: 'G', 3: 'P', 4: 'M', 5: 'L', 6: 'K'}
