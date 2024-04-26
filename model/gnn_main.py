@@ -314,7 +314,7 @@ def gnn_evaluation(gnn, max_num_epochs, batch_size, start_lr, num_repetitions, m
 
 max_num_epochs=20
 batch_size=1
-start_lr=0.1
+start_lr=0.01
 num_repetitions=5
 patient_dict=gnn_evaluation(ConstrainedGNNModel, max_num_epochs, batch_size, start_lr, num_repetitions, all_std=True)
 
