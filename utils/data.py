@@ -28,7 +28,7 @@ p[29]['P'] = np.genfromtxt('/home/users/b/bini/gnn/a_cells_sup/multiclass_hier/f
 
 # Dataset generation Hierarchical approach
 column=('FS INT', 'SS PEAK', 'SS INT', 'SS TOF', 'FL1 INT_CD14-FITC', 'FL2 INT_CD19-PE', 'FL3 INT_CD13-ECD', 'FL4 INT_CD33-PC5.5', 'FL5 INT_CD34-PC7', 'FL6 INT_CD117-APC', 'FL7 INT_CD7-APC700', 'FL8 INT_CD16-APC750', 'FL9 INT_HLA-PB', 'FL10 INT_CD45-KO', 'TIME')
-for i in range(29):
+for i in range(30):
     
     df_A=pd.DataFrame(p[i]['A'],columns=column)
     df_G=pd.DataFrame(p[i]['G'],columns=column)
