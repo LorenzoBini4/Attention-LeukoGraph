@@ -55,6 +55,7 @@ R = R.unsqueeze(0).to(device)
 
 INPUT_GRAPH = 'gHC_k7.pt'
 data_FC = torch.load(INPUT_GRAPH) 
+class_weights_tensor = torch.tensor(class_weights, dtype=torch.float32).to(device)
 total_count=[]
 for j in range(30):  
     df = pd.read_csv(f"Data_hierarchical/Case_{j+1}.csv", low_memory=False)
