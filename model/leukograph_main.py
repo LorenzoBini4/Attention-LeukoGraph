@@ -212,8 +212,8 @@ def gnn_evaluation(gnn, max_num_epochs, batch_size, start_lr, num_repetitions, m
             optimizer = torch.optim.Adam(model.parameters(), lr=start_lr)
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=factor,
                                                                    patience=patience, min_lr=0.0000001)
-            #criterion = nn.BCELoss(weight=class_weights_tensor)
-            criterion = nn.BCELoss()
+            criterion = nn.BCELoss(weight=class_weights_tensor)
+            #criterion = nn.BCELoss()
             best_val_acc = 0.0
             for epoch in range(1, max_num_epochs + 1):
                 lr = scheduler.optimizer.param_groups[0]['lr']
