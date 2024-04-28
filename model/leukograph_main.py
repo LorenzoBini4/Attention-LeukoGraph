@@ -12,6 +12,7 @@ import networkx as nx
 import os
 from torch_geometric.nn import GATConv
 from tqdm import tqdm
+from utils.weight_generation import class_weights
 
 # Set seeds for reproducibility
 seed_value = 77
